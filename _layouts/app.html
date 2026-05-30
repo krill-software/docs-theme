@@ -1,11 +1,31 @@
+{%- comment -%}
+  krill docs-theme — the one shared layout for every app landing page.
+
+  Identity + CI-managed bits come from the app's _config.yml (site.*):
+    title, slug, brand, version, tagline, appimage_size (optional)
+  Prose comes from the app's index.html front matter (page.*):
+    eyebrow, heading, lede, features[], principles[], install_note,
+    extension, keybindings[] (optional)
+  The app's index.html *body* is its preview mock, dropped into the
+  .preview-frame via {{ content }}.
+
+  Everything URL-shaped is derived here so it can never go stale:
+  GitHub/release URLs, artifact filenames, install commands, version.
+{%- endcomment -%}
+{%- assign repo = "https://github.com/krill-software/" | append: site.slug -%}
+{%- assign asset = site.title | replace: " ", "." -%}
+{%- assign v = site.version -%}
+{%- assign appimage = asset | append: "_" | append: v | append: "_amd64.AppImage" -%}
+{%- assign deb = asset | append: "_" | append: v | append: "_amd64.deb" -%}
+{%- assign dl = repo | append: "/releases/download/v" | append: v -%}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ site.title }} — {{ page.tagline | default: site.title }}</title>
+    <title>{{ site.title }} — {{ page.tagline }}</title>
     <meta name="description" content="{{ page.description }}" />
-    <meta property="og:title" content="{{ site.title }} — {{ page.tagline | default: site.title }}" />
+    <meta property="og:title" content="{{ site.title }} — {{ page.tagline }}" />
     <meta property="og:description" content="{{ page.og_description | default: page.description }}" />
     <link
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap"
@@ -13,38 +33,38 @@
     />
     <link rel="stylesheet" href="https://krill-software.github.io/chrome.css" />
     <style>
-      /* Tiny preview-frame shell — each app drops its own bespoke
-       * mock content into the page body. The frame chrome (the rounded
-       * outer card, the titlebar mock, the status-line strip) is
-       * standardized here so every page's mock has the same hairline /
-       * shadow / titlebar feel. */
+      /* Shared preview-frame chrome — the mock's window, titlebar and
+       * status bar. The mock's *contents* live in each app's index.html
+       * body and bring their own small <style> if they need one. */
       .preview-frame {
         margin: 48px 0 0;
         border: 1px solid var(--rule-strong);
         border-radius: 12px;
         overflow: hidden;
         background: var(--bg);
-        box-shadow:
-          0 30px 60px -30px rgba(48, 52, 63, 0.18),
+        box-shadow: 0 30px 60px -30px rgba(48, 52, 63, 0.18),
           0 8px 20px -10px rgba(48, 52, 63, 0.08);
       }
       .pv-titlebar {
         display: flex;
         align-items: center;
-        gap: 10px;
         padding: 12px 16px;
         border-bottom: 1px solid var(--rule);
         font-family: var(--mono);
         font-size: 12px;
         color: var(--muted);
       }
-      .pv-titlebar .title { color: var(--ink); }
+      .pv-titlebar .title { margin: 0 auto; color: var(--ink); }
       .pv-titlebar .dirty { color: var(--accent); margin-left: 4px; }
-      .pv-titlebar .winbtns {
-        margin-left: auto;
-        letter-spacing: 0.3em;
-        color: var(--rule-strong);
-        font-size: 11px;
+      .pv-titlebar .winbtns { display: flex; gap: 16px; letter-spacing: 2px; }
+      .pv-status {
+        border-top: 1px solid var(--rule);
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
       }
       .pv-caret {
         display: inline-block;
@@ -55,26 +75,46 @@
         animation: pv-blink 1.1s steps(2, start) infinite;
       }
       @keyframes pv-blink { to { visibility: hidden; } }
-      .pv-status {
-        border-top: 1px solid var(--rule);
-        padding: 10px 20px;
+
+      /* Optional keybindings grid (apps opt in via front matter). */
+      .keybinds {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 32px;
+        font-family: var(--mono);
+        font-size: 13.5px;
+      }
+      .keybinds div {
         display: flex;
         justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px dashed var(--rule);
+      }
+      .keybinds div span:last-child { color: var(--muted); }
+      kbd {
         font-family: var(--mono);
         font-size: 12px;
-        color: var(--muted);
+        background: var(--bg);
+        border: 1px solid var(--rule-strong);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        padding: 1px 6px;
+        color: var(--ink);
+      }
+
+      @media (max-width: 720px) {
+        .keybinds { grid-template-columns: 1fr; }
       }
     </style>
   </head>
   <body>
     <div class="wrap">
       <nav class="top">
-        <div class="brand">krill / {{ site.brand | default: site.slug }}</div>
+        <div class="brand">krill / {{ site.brand }}</div>
         <ul>
           <li><a href="#features">Features</a></li>
-          {% if page.principles %}<li><a href="#principles">Principles</a></li>{% endif %}
           <li><a href="#install">Install</a></li>
-          <li><a href="https://github.com/krill-software/{{ site.slug }}">GitHub</a></li>
+          <li><a href="{{ repo }}">GitHub</a></li>
         </ul>
       </nav>
 
@@ -82,100 +122,137 @@
         <div class="eyebrow">{{ page.eyebrow }}</div>
         <h1>{{ page.heading }}</h1>
         <p class="lede">{{ page.lede }}</p>
-
-        {% comment %}
-          Asset prefix: Tauri's bundler converts spaces in productName
-          to dots — so "Text Editor" v0.1.5 lands on disk as
-          Text.Editor_0.1.5_amd64.AppImage. We derive that here from
-          site.title so each app doesn't have to spell it out.
-        {% endcomment %}
-        {% assign asset_prefix = site.title | replace: " ", "." %}
-        {% capture appimage_url %}https://github.com/krill-software/{{ site.slug }}/releases/download/v{{ site.version }}/{{ asset_prefix }}_{{ site.version }}_amd64.AppImage{% endcapture %}
-        {% capture deb_url %}https://github.com/krill-software/{{ site.slug }}/releases/download/v{{ site.version }}/{{ asset_prefix }}_{{ site.version }}_amd64.deb{% endcapture %}
-
         <div class="cta">
-          <a class="btn btn-primary" href="{{ appimage_url }}">
-            Download AppImage{% if page.appimage_size %} <span class="size">· {{ page.appimage_size }}</span>{% endif %}
+          <a class="btn btn-primary" href="{{ dl }}/{{ appimage }}">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Download AppImage{% if site.appimage_size %} <span class="size">· {{ site.appimage_size }}</span>{% endif %}
           </a>
-          <a class="btn btn-secondary" href="{{ deb_url }}">
+          <a class="btn btn-secondary" href="{{ dl }}/{{ deb }}">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             .deb for Ubuntu / Debian
           </a>
         </div>
         <div class="meta">
-          <strong>v{{ site.version }}</strong> · Linux x86_64 · Free &amp; open source
+          <strong>v{{ v }}</strong> · Linux x86_64 · Free &amp; open source
         </div>
 
-        {{ content }}
+        <div class="preview-frame">
+          {{ content }}
+        </div>
       </header>
 
       <section id="features">
         <div class="section-label">Features</div>
-        <h2>{{ page.features_heading | default: "Features." }}</h2>
+        <h2>{{ page.features_heading }}</h2>
         <div class="features">
-          {% for f in page.features %}
+          {%- for f in page.features %}
           <div class="feature">
             <div class="tag">{{ f.tag }}</div>
             <h3>{{ f.title }}</h3>
             <p>{{ f.blurb }}</p>
           </div>
-          {% endfor %}
+          {%- endfor %}
         </div>
       </section>
 
-      {% if page.principles %}
       <section id="principles">
         <div class="section-label">Principles</div>
-        <h2>{{ page.principles_heading | default: "What this isn't." }}</h2>
+        <h2>{{ page.principles_heading }}</h2>
         <div class="principles">
-          {% for p in page.principles %}
+          {%- for p in page.principles %}
           <div class="principle">
             <strong>{{ p.strong }}</strong>
             <span>{{ p.span }}</span>
           </div>
-          {% endfor %}
+          {%- endfor %}
         </div>
       </section>
-      {% endif %}
 
       <section id="install">
         <div class="section-label">Install</div>
-        <h2>{{ page.install_heading | default: "Two files. One minute." }}</h2>
+        <h2>{{ page.install_heading | default: "Quick install" }}</h2>
         <div class="install">
-          <div class="install-copy">
+          <div class="install-quick">
             <p>
-              Both formats ship the same binary{% if page.extension %} and register
-              <span style="font-family: var(--mono); color: var(--ink)">{{ page.extension }}</span>
-              as an associated file type — opens land in this app by default{% endif %}.
+              One-liner — downloads the AppImage to
+              <span style="font-family: var(--mono); color: var(--ink)">~/.local/bin</span>,
+              marks it executable, and registers a launcher entry. Re-run
+              to upgrade.
             </p>
-            <p style="margin-top: 20px">
-              Or build from source:
-              <span style="font-family: var(--mono); color: var(--ink)">pnpm install &amp;&amp; pnpm tauri build</span>.
-            </p>
+<pre>curl -fsSL https://krill-software.github.io/install.sh | bash -s {{ site.slug }}</pre>
           </div>
-          <div class="install-box">
-            <h3>AppImage · any Linux</h3>
-<pre><span class="c"># download</span>
-curl -LO {{ appimage_url }}
 
-<span class="c"># make executable &amp; run</span>
-chmod +x {{ asset_prefix }}_{{ site.version }}_amd64.AppImage
-./{{ asset_prefix }}_{{ site.version }}_amd64.AppImage{% if page.example_file %} {{ page.example_file }}{% endif %}</pre>
+          <div class="install-or">or download a package</div>
 
-            <hr />
+          <div class="install-options">
+            <div class="install-option">
+              <a class="btn-download" href="{{ dl }}/{{ deb }}">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Download .deb
+              </a>
+<pre><span class="c"># install with apt</span>
+sudo apt install ./{{ deb }}
 
-            <h3>Debian / Ubuntu</h3>
-<pre>sudo dpkg -i {{ asset_prefix }}_{{ site.version }}_amd64.deb
-krill-{{ site.slug }}{% if page.example_file %} {{ page.example_file }}{% endif %}</pre>
+<span class="c"># or with dpkg</span>
+sudo dpkg -i {{ deb }}</pre>
+            </div>
+            <div class="install-option">
+              <a class="btn-download" href="{{ dl }}/{{ appimage }}">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Download AppImage
+              </a>
+<pre><span class="c"># make executable &amp; run</span>
+chmod +x {{ appimage }}
+./{{ appimage }}</pre>
+            </div>
           </div>
         </div>
       </section>
+
+      <section id="build">
+        <div class="section-label">Build from source</div>
+        <h2>{{ page.build_heading | default: "Build it yourself" }}</h2>
+        <div class="build">
+          <p>
+            Clone, install dependencies, and build with Tauri. Needs Node
+            (with pnpm) and a Rust toolchain.
+          </p>
+<pre><span class="c"># clone</span>
+git clone {{ repo }}.git
+cd {{ site.slug }}
+
+<span class="c"># build</span>
+pnpm install
+pnpm tauri build</pre>
+        </div>
+      </section>
+
+      {%- if page.keybindings %}
+      <section id="keys">
+        <div class="section-label">Keybindings</div>
+        <h2>{{ page.keybindings_heading | default: "All of it, from the keyboard." }}</h2>
+        <div class="keybinds">
+          {%- for k in page.keybindings %}
+          <div><span>{{ k.action }}</span><kbd>{{ k.keys }}</kbd></div>
+          {%- endfor %}
+        </div>
+      </section>
+      {%- endif %}
 
       <footer>
         <div>© krill · MIT licensed · No tracking, no accounts</div>
         <div>
-          <a href="https://github.com/krill-software/{{ site.slug }}">Source on GitHub</a>
+          <a href="{{ repo }}">Source on GitHub</a>
           &nbsp;·&nbsp;
-          <a href="https://github.com/krill-software/{{ site.slug }}/issues">Report an issue</a>
+          <a href="{{ repo }}/issues">Report an issue</a>
         </div>
       </footer>
     </div>
