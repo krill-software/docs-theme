@@ -6,8 +6,15 @@
   Prose comes from the app's index.html front matter (page.*):
     eyebrow, heading, lede, features[], principles[], install_note,
     extension, keybindings[] (optional)
-  The app's index.html *body* is its preview mock, dropped into the
-  .preview-frame via {{ content }}.
+  The app's index.html *body* is the INNER content of the preview
+  mock — the theme wraps it with pv-titlebar + pv-status chrome so
+  the suite convention can't drift per app.
+
+  Preview-mock chrome consumes optional `mock:` front matter:
+    mock.filename  — titlebar centered title
+    mock.dirty     — appends accent bullet to the title
+    mock.state     — status-line right half
+  Status-line left is always `v{{ site.version }}`.
 
   Everything URL-shaped is derived here so it can never go stale:
   GitHub/release URLs, artifact filenames, install commands, version.
@@ -145,8 +152,35 @@
           <strong>v{{ v }}</strong> · Linux x86_64 · Free &amp; open source
         </div>
 
+        {%- comment -%}
+          Shared preview-mock chrome. Apps' index.html only declares
+          the inner body content + an optional `mock:` front-matter
+          block; the titlebar, window controls, and status line are
+          rendered here so the suite chrome can't drift per app.
+
+          Front matter consumed (all optional):
+            mock.filename  — shown centered in the titlebar
+            mock.dirty     — appends the accent dirty marker
+            mock.state     — right-half of the status line
+                             (e.g. "Ln 7 · Col 32 · UTF-8")
+
+          The status-line LEFT half is always `v{{ site.version }}` —
+          per STYLE.md, the version is the canonical left half.
+        {%- endcomment -%}
         <div class="preview-frame">
+          <div class="pv-titlebar">
+            {%- if page.mock.filename %}
+            <span class="title">{{ page.mock.filename }}{% if page.mock.dirty %}<span class="dirty">•</span>{% endif %}</span>
+            {%- endif %}
+            <span class="winbtns">─ ▢ ✕</span>
+          </div>
           {{ content }}
+          {%- if page.mock.state %}
+          <div class="pv-status">
+            <span>v{{ site.version }}</span>
+            <span>{{ page.mock.state }}</span>
+          </div>
+          {%- endif %}
         </div>
       </header>
 
