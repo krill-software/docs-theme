@@ -56,7 +56,12 @@
       }
       .pv-titlebar .title { margin: 0 auto; color: var(--ink); }
       .pv-titlebar .dirty { color: var(--accent); margin-left: 4px; }
-      .pv-titlebar .winbtns { display: flex; gap: 16px; letter-spacing: 2px; }
+      /* `margin-left: auto` so the winbtns sit on the right edge even
+       * when an app's mock omits the centered .title element (e.g.
+       * system-monitor, which has no filename surface). The suite
+       * convention is window controls right — never let this rule
+       * depend on a sibling existing. */
+      .pv-titlebar .winbtns { display: flex; gap: 16px; letter-spacing: 2px; margin-left: auto; }
       .pv-status {
         border-top: 1px solid var(--rule);
         padding: 10px 20px;
