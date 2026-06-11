@@ -4,8 +4,10 @@
   Identity + CI-managed bits come from the app's _config.yml (site.*):
     title, slug, brand, version, tagline, appimage_size (optional)
   Prose comes from the app's index.html front matter (page.*):
-    eyebrow, heading, lede, features[], principles[], install_note,
-    extension, keybindings[] (optional)
+    lede, features[], install_note, extension, keybindings[] (optional)
+  The hero eyebrow is the constant "Linux native" and the H1 is the
+  app name (site.title) — both fixed here so the suite hero can't
+  drift per app. (page.eyebrow / page.heading are no longer read.)
   The app's index.html *body* is the INNER content of the preview
   mock — the theme wraps it with pv-titlebar + pv-status chrome so
   the suite convention can't drift per app.
@@ -149,12 +151,13 @@
           <li><a href="#features">Features</a></li>
           <li><a href="#install">Install</a></li>
           <li><a href="{{ repo }}">GitHub</a></li>
+          <li><a href="https://krill.software/">More krill apps</a></li>
         </ul>
       </nav>
 
       <header class="hero">
-        <div class="eyebrow">{{ page.eyebrow }}</div>
-        <h1>{{ page.heading }}</h1>
+        <div class="section-label">Linux native</div>
+        <h1>{{ site.title }}</h1>
         <p class="lede">{{ page.lede }}</p>
         <div class="cta">
           <a class="btn btn-primary" href="{{ dl }}/{{ appimage }}">
