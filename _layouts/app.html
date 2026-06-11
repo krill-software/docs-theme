@@ -188,19 +188,29 @@
             mock.dirty     — appends the accent dirty marker
             mock.state     — right-half of the status line
                              (e.g. "Ln 7 · Col 32 · UTF-8")
+            mock.chrome    — set to "app" for apps that use the in-app
+                             "app layout" (mountChrome layout:"app"):
+                             those windows have NO titlebar and NO
+                             status line, so the preview frame drops
+                             both and the app's own body supplies its
+                             per-pane top bars. Omit for document-layout
+                             apps (titlebar + status, the default).
 
           The status-line LEFT half is always `v{{ site.version }}` —
           per STYLE.md, the version is the canonical left half.
         {%- endcomment -%}
+        {%- assign app_chrome = page.mock.chrome == "app" -%}
         <div class="preview-frame">
+          {%- unless app_chrome %}
           <div class="pv-titlebar">
             {%- if page.mock.filename %}
             <span class="title">{{ page.mock.filename }}{% if page.mock.dirty %}<span class="dirty">•</span>{% endif %}</span>
             {%- endif %}
             <span class="winbtns">─ ▢ ✕</span>
           </div>
+          {%- endunless %}
           {{ content }}
-          {%- if page.mock.state %}
+          {%- if page.mock.state and app_chrome == false %}
           <div class="pv-status">
             <span>v{{ site.version }}</span>
             <span>{{ page.mock.state }}</span>
